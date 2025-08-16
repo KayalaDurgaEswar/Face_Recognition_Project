@@ -1,0 +1,10 @@
+# Sample Names File
+# This file shows the expected format for names.pkl
+# Replace with actual names when training the system
+
+# Example format:
+# ["John Doe", "John Doe", "John Doe", ..., "Jane Smith", "Jane Smith", ...]
+# Each name should appear 100 times (one for each captured face image)
+
+# Note: This is just a template. The actual names.pkl file will be created
+# when you run add_faces.py and will contain binary data.

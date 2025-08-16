@@ -1,0 +1,41 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Python files
+*.py text diff=python
+
+# HTML files
+*.html text diff=html
+
+# CSS files
+*.css text
+
+# JavaScript files
+*.js text
+
+# Markdown files
+*.md text diff=markdown
+
+# CSV files
+*.csv text
+
+# XML files
+*.xml text
+
+# Configuration files
+*.txt text
+*.ini text
+*.cfg text
+*.conf text
+
+# Binary files (should not be modified)
+*.pkl binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.svg binary
+*.ico binary
+
+# Documentation
+*.pdf binary

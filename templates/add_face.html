@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Face</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        #video {
+            width: 320px;
+            height: 240px;
+            border-radius: 8px;
+            border: 2px solid #0d6efd;
+            margin-bottom: 10px;
+        }
+        .progress-container {
+            margin: 20px 0;
+        }
+        .capture-status {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+{% include 'navbar.html' %}
+<div class="container mt-5">
+    <h2>Add New Face</h2>
+    <p class="text-muted">This will capture 100 images to train the face recognition model.</p>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label for="personName" class="form-label">Enter Your Name:</label>
+                <input type="text" class="form-control" id="personName" placeholder="Enter your name">
+            </div>
+            
+            <div class="mb-3">
+                <button type="button" class="btn btn-primary" id="startCaptureBtn">Start Capturing</button>
+                <button type="button" class="btn btn-danger" id="stopCaptureBtn" style="display:none;">Stop Capturing</button>
+            </div>
+            
+            <div class="progress-container" style="display:none;">
+                <label>Progress:</label>
+                <div class="progress">
+                    <div class="progress-bar" id="captureProgress" role="progressbar" style="width: 0%">0%</div>
+                </div>
+                <div class="capture-status" id="captureStatus">Ready to start...</div>
+            </div>
+            
+            <div id="resultMessage"></div>
+        </div>
+        
+        <div class="col-md-6">
+            <h5>Live Camera Feed</h5>
+            <video id="video" autoplay></video>
+            <div id="faceCount" class="text-muted">Face count: 0</div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+const video = document.getElementById('video');
+const startCaptureBtn = document.getElementById('startCaptureBtn');
+const stopCaptureBtn = document.getElementById('stopCaptureBtn');
+const personName = document.getElementById('personName');
+const progressContainer = document.querySelector('.progress-container');
+const captureProgress = document.getElementById('captureProgress');
+const captureStatus = document.getElementById('captureStatus');
+const resultMessage = document.getElementById('resultMessage');
+const faceCount = document.getElementById('faceCount');
+
+let stream = null;
+let isCapturing = false;
+let capturedImages = [];
+let captureInterval = null;
+
+// Access webcam
+if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({ video: true })
+        .then(function(mediaStream) {
+            stream = mediaStream;
+            video.srcObject = stream;
+            video.play();
+        })
+        .catch(function(error) {
+            console.error('Error accessing webcam:', error);
+            captureStatus.textContent = 'Error: Could not access webcam';
+        });
+}
+
+startCaptureBtn.onclick = function() {
+    if (!personName.value.trim()) {
+        alert('Please enter your name first!');
+        return;
+    }
+    
+    if (!stream) {
+        alert('Webcam not available. Please allow camera access.');
+        return;
+    }
+    
+    // Start capturing
+    isCapturing = true;
+    capturedImages = [];
+    startCaptureBtn.style.display = 'none';
+    stopCaptureBtn.style.display = 'inline-block';
+    progressContainer.style.display = 'block';
+    resultMessage.innerHTML = '';
+    
+    // Start capturing every 100ms (10 times per second)
+    captureInterval = setInterval(captureFrame, 100);
+    
+    captureStatus.textContent = 'Capturing images...';
+};
+
+stopCaptureBtn.onclick = function() {
+    stopCapturing();
+};
+
+function stopCapturing() {
+    isCapturing = false;
+    if (captureInterval) {
+        clearInterval(captureInterval);
+        captureInterval = null;
+    }
+    
+    startCaptureBtn.style.display = 'inline-block';
+    stopCaptureBtn.style.display = 'none';
+    
+    if (capturedImages.length > 0) {
+        trainModel();
+    }
+}
+
+function captureFrame() {
+    if (!isCapturing || capturedImages.length >= 100) {
+        if (capturedImages.length >= 100) {
+            stopCapturing();
+        }
+        return;
+    }
+    
+    // Create canvas to capture frame
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // Capture frame
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageData = canvas.toDataURL('image/png');
+    
+    // Add to captured images (every 10th frame to get 100 images)
+    if (capturedImages.length < 100) {
+        capturedImages.push(imageData);
+        
+        // Update progress
+        const progress = Math.round((capturedImages.length / 100) * 100);
+        captureProgress.style.width = progress + '%';
+        captureProgress.textContent = progress + '%';
+        faceCount.textContent = `Face count: ${capturedImages.length}`;
+        
+        if (capturedImages.length >= 100) {
+            captureStatus.textContent = 'Captured 100 images! Training model...';
+        }
+    }
+}
+
+function trainModel() {
+    captureStatus.textContent = 'Training model with captured images...';
+    
+    // Send images to server for training
+    fetch('/add_face', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            name: personName.value.trim(),
+            images: capturedImages
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            resultMessage.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+            captureStatus.textContent = 'Training completed successfully!';
+            personName.value = '';
+        } else {
+            resultMessage.innerHTML = `<div class="alert alert-danger">Error: ${data.message}</div>`;
+            captureStatus.textContent = 'Training failed. Please try again.';
+        }
+    })
+    .catch(error => {
+        resultMessage.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+        captureStatus.textContent = 'Training failed. Please try again.';
+    });
+}
+</script>
+</body>
+</html> 
