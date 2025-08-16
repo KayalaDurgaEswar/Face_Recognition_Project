@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # Face Recognition Attendance System
 
 A Python-based face recognition system for automated attendance tracking using computer vision and machine learning.
