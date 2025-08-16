@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Face Recognition Attendance System
 
 A Python-based face recognition system for automated attendance tracking using computer vision and machine learning.
@@ -146,3 +147,6 @@ This project is open source. Please ensure you comply with all applicable laws a
 ## Disclaimer
 
 This system is for educational and demonstration purposes. Users are responsible for ensuring compliance with privacy laws and regulations in their jurisdiction.
+=======
+# Face_Recognition_Project
+>>>>>>> 7398ef4abd959846c0ecfecf3529813ddd5dc2e6
